@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Вікторина англійських слів</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; background: #f5f5f5; display: flex; justify-content: center; padding: 1.5rem 1rem; min-height: 100vh; }
+#quiz-wrap { width: 100%; max-width: 600px; }
+h1 { font-size: 1.2rem; font-weight: 500; text-align: center; margin-bottom: 1.5rem; color: #222; }
+#progress-bar-bg { height: 6px; background: #ddd; border-radius: 3px; margin-bottom: 1.5rem; }
+#progress-bar { height: 6px; background: #1D9E75; border-radius: 3px; transition: width 0.4s; }
+#stats { display: flex; gap: 10px; margin-bottom: 1.25rem; }
+.stat { flex: 1; background: #fff; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #eee; }
+.stat-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+.stat-val { font-size: 20px; font-weight: 500; }
+#q-counter { font-size: 13px; color: #aaa; text-align: right; margin-bottom: 8px; }
+#word-card { background: #eef6f2; border-radius: 12px; padding: 2rem 1.5rem; text-align: center; margin-bottom: 1.25rem; }
+#english-word { font-size: 2rem; font-weight: 500; color: #222; }
+#options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.25rem; }
+.opt-btn { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 13px 10px; font-size: 14px; color: #222; cursor: pointer; transition: background 0.15s; text-align: center; line-height: 1.3; }
+.opt-btn:hover:not(:disabled) { background: #f0f0f0; }
+.opt-btn.correct { background: #E1F5EE; border-color: #1D9E75; color: #085041; }
+.opt-btn.wrong { background: #FCEBEB; border-color: #E24B4A; color: #501313; }
+.opt-btn:disabled { cursor: default; }
+#feedback { min-height: 24px; text-align: center; font-size: 14px; color: #666; margin-bottom: 1rem; }
+#next-btn { display: none; width: 100%; padding: 13px; background: #fff; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; color: #222; cursor: pointer; }
+#next-btn:hover { background: #f0f0f0; }
+#result-screen { display: none; text-align: center; padding: 2rem 1rem; }
+#result-screen h2 { font-size: 1.4rem; font-weight: 500; margin-bottom: 0.5rem; }
+#result-msg { font-size: 14px; color: #666; margin-bottom: 1.5rem; }
+#restart-btn { padding: 12px 28px; background: #fff; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; cursor: pointer; }
+#restart-btn:hover { background: #f0f0f0; }
+</style>
+</head>
+<body>
+<div id="quiz-wrap">
+  <h1>Англійські слова — вікторина</h1>
+  <div id="stats">
+    <div class="stat"><div class="stat-label">Правильно</div><div class="stat-val" id="s-correct" style="color:#1D9E75">0</div></div>
+    <div class="stat"><div class="stat-label">Неправильно</div><div class="stat-val" id="s-wrong" style="color:#E24B4A">0</div></div>
+    <div class="stat"><div class="stat-label">Залишилось</div><div class="stat-val" id="s-left">30</div></div>
+  </div>
+  <div id="progress-bar-bg"><div id="progress-bar" style="width:0%"></div></div>
+  <div id="q-counter">1 / 30</div>
+  <div id="word-card"><div id="english-word">—</div></div>
+  <div id="options-grid"></div>
+  <div id="feedback"></div>
+  <button id="next-btn">Далі →</button>
+  <div id="result-screen">
+    <h2 id="result-title"></h2>
+    <p id="result-msg"></p>
+    <button id="restart-btn">Почати знову</button>
+  </div>
+</div>
+<script>
+const ALL_WORDS = [
+  ["the","артикль (визначений)"],["be","бути"],["to","до / для"],["of","з / від"],["and","і"],
+  ["a","артикль (невизначений)"],["in","в / у"],["that","той / що"],["have","мати"],["it","воно / це"],
+  ["for","для / за"],["not","не"],["on","на"],["with","з"],["he","він"],
+  ["as","як / оскільки"],["you","ти / ви"],["do","робити"],["at","біля / о (час)"],["this","цей / це"],
+  ["but","але"],["his","його"],["by","через / біля"],["from","від / з"],["they","вони"],
+  ["we","ми"],["say","говорити"],["her","вона / її"],["she","вона"],["or","або"],
+  ["an","артикль (перед голосними)"],["will","буде (майбутнє)"],["my","мій"],["one","один"],["all","всі / все"],
+  ["would","б (умовний)"],["there","там"],["their","їхній"],["what","що"],["so","так / тому"],
+  ["up","вгору"],["out","назовні"],["if","якщо"],["about","про"],["who","хто"],
+  ["get","отримати"],["which","який"],["go","йти"],["me","мені / мене"],["when","коли"],
+  ["make","робити / зробити"],["can","могти"],["like","подобатись / як"],["time","час"],["no","ні / немає"],
+  ["just","тільки / щойно"],["him","йому / його"],["know","знати"],["take","брати"],["people","люди"],
+  ["into","в / всередину"],["year","рік"],["your","твій / ваш"],["good","хороший"],["some","деякі / трохи"],
+  ["could","міг би"],["them","їм / їх"],["see","бачити"],["other","інший"],["than","ніж"],
+  ["then","тоді / потім"],["now","зараз"],["look","дивитись"],["only","тільки"],["come","приходити"],
+  ["its","його (присвійний)"],["over","над / через"],["think","думати"],["also","також"],["back","назад / спина"],
+  ["after","після"],["use","використовувати"],["two","два"],["how","як"],["our","наш"],
+  ["work","робота / працювати"],["first","перший"],["well","добре"],["way","шлях / спосіб"],["even","навіть"],
+  ["new","новий"],["want","хотіти"],["because","тому що"],["any","будь-який"],["these","ці"],
+  ["give","давати"],["day","день"],["most","більшість"],["us","нам / нас"],["great","чудовий"],
+  ["between","між"],["need","потребувати"],["large","великий"],["often","часто"],["hand","рука / долоня"],
+  ["high","високий"],["place","місце"],["hold","тримати"],["free","вільний / безкоштовний"],["real","справжній"],
+  ["life","життя"],["few","мало / декілька"],["north","північ"],["open","відкривати / відкритий"],["seem","здаватись"],
+  ["together","разом"],["next","наступний"],["white","білий"],["children","діти"],["begin","починати"],
+  ["got","отримав / мав"],["walk","ходити / гуляти"],["example","приклад"],["ease","легкість"],["paper","папір"],
+  ["group","група"],["always","завжди"],["music","музика"],["those","ті"],["both","обидва"],
+  ["mark","позначка / позначати"],["book","книга"],["carry","носити / везти"],["science","наука"],["eat","їсти"],
+  ["room","кімната"],["friend","друг"],["began","почав"],["idea","ідея"],["fish","риба"],
+  ["mountain","гора"],["stop","зупинятись"],["once","одного разу / раз"],["base","основа / базовий"],["hear","чути"],
+  ["horse","кінь"],["cut","різати"],["sure","впевнений"],["watch","дивитись / годинник"],["color","колір"],
+  ["face","обличчя"],["wood","дерево / деревина"],["main","головний"],["enough","достатньо"],["plain","простий / рівнина"],
+  ["girl","дівчина"],["usual","звичайний"],["young","молодий"],["ready","готовий"],["above","вище / над"],
+  ["ever","коли-небудь"],["red","червоний"],["list","список"],["though","хоча"],["feel","відчувати"],
+  ["talk","розмовляти"],["bird","птах"],["soon","незабаром"],["body","тіло"],["dog","собака"],
+  ["family","сім'я"],["direct","прямий / направляти"],["pose","поза / ставити"],["leave","залишати / іти"],["song","пісня"],
+  ["measure","вимірювати / міра"],["door","двері"],["product","продукт"],["black","чорний"],["short","короткий"],
+  ["numeral","цифра / числівник"],["class","клас"],["wind","вітер"],["question","питання"],["happen","трапитись"],
+  ["complete","повний / завершити"],["ship","корабель"],["area","площа / район"],["half","половина"],["rock","скеля / камінь"],
+  ["order","порядок / замовлення"],["fire","вогонь"],["south","південь"],["problem","проблема"],["piece","шматок / частина"],
+  ["told","сказав"],["knew","знав"],["pass","проходити"],["since","з того часу / оскільки"],["top","верх / вершина"],
+  ["whole","цілий / весь"],["king","король"],["space","простір / космос"],["heard","почув"],["best","найкращий"],
+  ["hour","година"],["better","кращий"],["true","правдивий / справжній"],["during","під час"],["hundred","сто"],
+  ["five","п'ять"],["remember","пам'ятати"],["step","крок"],["early","ранній / рано"],
+  ["west","захід"],["ground","земля / ґрунт"],["interest","інтерес"],["reach","досягати"],["fast","швидкий"],
+  ["verb","дієслово"],["sing","співати"],["listen","слухати"],["six","шість"],["table","стіл"],
+  ["travel","подорожувати"],["less","менше"],["morning","ранок"],["ten","десять"],["simple","простий"],
+  ["several","кілька"],["vowel","голосна буква"],["toward","до / у напрямку"],["war","війна"],["lay","класти / лежати"]
+];
+
+const TOTAL = 30, OPTIONS = 5;
+let words = [], qi = 0, correct = 0, wrong = 0, answered = false;
+
+function shuffle(arr) {
+  let a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    let j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  words = shuffle(ALL_WORDS).slice(0, TOTAL);
+  qi = 0; correct = 0; wrong = 0; answered = false;
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('options-grid').style.display = 'grid';
+  document.getElementById('word-card').style.display = '';
+  document.getElementById('feedback').style.display = '';
+  document.getElementById('q-counter').style.display = '';
+  document.getElementById('stats').style.display = 'flex';
+  document.getElementById('progress-bar-bg').style.display = '';
+  updateStats();
+  showQuestion();
+}
+
+function updateStats() {
+  document.getElementById('s-correct').textContent = correct;
+  document.getElementById('s-wrong').textContent = wrong;
+  document.getElementById('s-left').textContent = TOTAL - qi;
+  document.getElementById('progress-bar').style.width = Math.round(qi/TOTAL*100) + '%';
+  document.getElementById('q-counter').textContent = (qi+1) + ' / ' + TOTAL;
+}
+
+function showQuestion() {
+  answered = false;
+  const [eng, ukr] = words[qi];
+  document.getElementById('english-word').textContent = eng;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('next-btn').style.display = 'none';
+
+  let pool = ALL_WORDS.filter(w => w[0] !== eng);
+  let distractors = shuffle(pool).slice(0, OPTIONS-1).map(w => w[1]);
+  let options = shuffle([ukr, ...distractors]);
+
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = opt;
+    btn.onclick = () => checkAnswer(opt, ukr);
+    grid.appendChild(btn);
+  });
+  updateStats();
+}
+
+function checkAnswer(selected, correct_ukr) {
+  if (answered) return;
+  answered = true;
+  const btns = document.querySelectorAll('.opt-btn');
+  btns.forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct_ukr) b.classList.add('correct');
+    if (b.textContent === selected && selected !== correct_ukr) b.classList.add('wrong');
+  });
+  const fb = document.getElementById('feedback');
+  if (selected === correct_ukr) {
+    correct++;
+    fb.textContent = 'Правильно!';
+    fb.style.color = '#1D9E75';
+  } else {
+    wrong++;
+    fb.textContent = 'Неправильно. Правильна відповідь виділена.';
+    fb.style.color = '#E24B4A';
+  }
+  updateStats();
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.style.display = 'block';
+  nextBtn.textContent = qi + 1 < TOTAL ? 'Далі →' : 'Результат →';
+}
+
+document.getElementById('next-btn').onclick = () => {
+  qi++;
+  if (qi >= TOTAL) showResult();
+  else showQuestion();
+};
+
+function showResult() {
+  document.getElementById('options-grid').style.display = 'none';
+  document.getElementById('word-card').style.display = 'none';
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('q-counter').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('progress-bar').style.width = '100%';
+
+  const pct = Math.round(correct/TOTAL*100);
+  let title, msg;
+  if (pct >= 90) { title = '🏆 Відмінно!'; msg = correct + ' з ' + TOTAL + ' — ви чудово знаєте ці слова!'; }
+  else if (pct >= 70) { title = '👍 Добре!'; msg = correct + ' з ' + TOTAL + ' — непоганий результат. Ще трохи практики!'; }
+  else if (pct >= 50) { title = '📚 Непогано'; msg = correct + ' з ' + TOTAL + ' — є над чим попрацювати.'; }
+  else { title = '💪 Продовжуйте!'; msg = correct + ' з ' + TOTAL + ' — повторіть слова і спробуйте ще раз.'; }
+
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-msg').textContent = msg;
+  document.getElementById('result-screen').style.display = 'block';
+}
+
+document.getElementById('restart-btn').onclick = startQuiz;
+startQuiz();
+</script>
+</body>
+</html>
