@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>300 найвживаніших англійських слів — Вікторина</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; padding: 16px; }
+#app { max-width: 600px; margin: 0 auto; }
+h1 { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 16px; color: #1a1a1a; }
+#progress-bar-bg { background: #ddd; border-radius: 999px; height: 7px; margin-bottom: 14px; overflow: hidden; }
+#progress-bar { background: #1D9E75; height: 7px; border-radius: 999px; transition: width 0.4s; }
+#stats { display: flex; gap: 14px; margin-bottom: 14px; font-size: 13px; color: #555; flex-wrap: wrap; }
+#stats span { display: flex; align-items: center; gap: 3px; }
+#mode-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+.mode-btn { flex: 1; padding: 8px; border-radius: 7px; border: 1px solid #bbb; background: #e8e8e3; font-size: 13px; color: #555; cursor: pointer; }
+.mode-btn.active { background: #fff; border-color: #888; color: #1a1a1a; font-weight: bold; }
+#word-card { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 24px 20px 18px; margin-bottom: 12px; text-align: center; }
+#word-type { font-size: 12px; color: #888; font-style: italic; margin-bottom: 6px; }
+#word-en { font-size: 30px; font-weight: bold; color: #1a1a1a; letter-spacing: -0.5px; margin-bottom: 6px; }
+#hint-btn { font-size: 12px; color: #1a6eaa; cursor: pointer; background: none; border: none; padding: 0; margin-top: 4px; text-decoration: underline; }
+#hint-text { font-size: 13px; color: #888; margin-top: 6px; min-height: 16px; }
+#options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.opt-btn { background: #fff; border: 1px solid #ccc; border-radius: 7px; padding: 13px 10px; font-size: 15px; color: #1a1a1a; cursor: pointer; text-align: center; line-height: 1.3; transition: background 0.12s; }
+.opt-btn:hover { background: #f0f0ea; }
+.opt-btn.correct { background: #d6f0c2; border-color: #3B6D11; color: #27500A; }
+.opt-btn.wrong { background: #fdd; border-color: #A32D2D; color: #791F1F; }
+.opt-btn.reveal-correct { background: #d6f0c2; border-color: #3B6D11; color: #27500A; }
+#feedback { min-height: 26px; text-align: center; font-size: 14px; margin-bottom: 10px; font-weight: bold; }
+#next-btn { width: 100%; padding: 13px; border-radius: 7px; border: 1px solid #bbb; background: #fff; font-size: 15px; color: #1a1a1a; cursor: pointer; display: none; }
+#next-btn:hover { background: #f0f0ea; }
+#result-screen { display: none; text-align: center; padding: 30px 0; }
+#result-screen h2 { font-size: 22px; font-weight: bold; margin-bottom: 8px; }
+#result-screen p { color: #555; font-size: 15px; margin-bottom: 20px; }
+#restart-btn { padding: 12px 32px; border-radius: 7px; border: 1px solid #bbb; background: #fff; font-size: 15px; cursor: pointer; }
+#restart-btn:hover { background: #f0f0ea; }
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>300 найвживаніших англійських слів</h1>
+  <div id="progress-bar-bg"><div id="progress-bar" style="width:0%"></div></div>
+  <div id="stats">
+    <span id="stat-q">Питання 1 / 300</span>
+    <span id="stat-correct" style="color:#3B6D11">✓ 0</span>
+    <span id="stat-wrong" style="color:#A32D2D">✗ 0</span>
+    <span id="stat-score">0%</span>
+  </div>
+  <div id="mode-bar">
+    <button class="mode-btn active" onclick="setMode('ua-en')" id="mode-ua-en">Укр → Англ</button>
+    <button class="mode-btn" onclick="setMode('en-ua')" id="mode-en-ua">Англ → Укр</button>
+  </div>
+  <div id="word-card">
+    <div id="word-type"></div>
+    <div id="word-en"></div>
+    <button id="hint-btn" onclick="showHint()">показати підказку</button>
+    <div id="hint-text"></div>
+  </div>
+  <div id="options-grid"></div>
+  <div id="feedback"></div>
+  <button id="next-btn" onclick="nextQuestion()">Наступне →</button>
+  <div id="result-screen">
+    <h2 id="result-title"></h2>
+    <p id="result-desc"></p>
+    <button id="restart-btn" onclick="restart()">Почати знову</button>
+  </div>
+</div>
+<script>
+var words = [
+  ["the","артикль (the)","art"],["be","бути","v"],["to","до / щоб","prep"],["of","з / від","prep"],["and","і / та","conj"],["a","артикль (a)","art"],["in","в / у","prep"],["that","той / що","pron"],["have","мати","v"],["it","воно / це","pron"],
+  ["for","для / за","prep"],["not","не","adv"],["on","на","prep"],["with","з","prep"],["he","він","pron"],["as","як","conj"],["you","ти / ви","pron"],["do","робити","v"],["at","при / о","prep"],["this","цей / це","pron"],
+  ["but","але","conj"],["his","його","pron"],["by","біля / через","prep"],["from","з / від","prep"],["they","вони","pron"],["we","ми","pron"],["say","казати","v"],["her","її","pron"],["she","вона","pron"],["or","або","conj"],
+  ["an","артикль (an)","art"],["will","буду / воля","v"],["my","мій","pron"],["one","один","num"],["all","всі / весь","pron"],["would","б / міг би","v"],["there","там","adv"],["their","їхній","pron"],["what","що","pron"],["so","так / тому","adv"],
+  ["up","вгору","adv"],["out","назовні","adv"],["if","якщо","conj"],["about","про","prep"],["who","хто","pron"],["get","отримати","v"],["which","який","pron"],["go","іти","v"],["me","мені / мене","pron"],["when","коли","adv"],
+  ["make","робити","v"],["can","могти","v"],["like","подобатись","v"],["time","час","n"],["no","ні","adv"],["just","просто","adv"],["him","йому","pron"],["know","знати","v"],["take","брати","v"],["people","люди","n"],
+  ["into","всередину","prep"],["year","рік","n"],["your","ваш","pron"],["good","гарний","adj"],["some","деякі","det"],["could","міг","v"],["them","їм","pron"],["see","бачити","v"],["other","інший","adj"],["than","ніж","conj"],
+  ["then","тоді","adv"],["now","зараз","adv"],["look","дивитись","v"],["only","тільки","adv"],["come","приходити","v"],["its","його (речей)","pron"],["over","над","prep"],["think","думати","v"],["also","також","adv"],["back","назад","adv"],
+  ["after","після","prep"],["use","використовувати","v"],["two","два","num"],["how","як","adv"],["our","наш","pron"],["work","працювати","v"],["first","перший","adj"],["well","добре","adv"],["way","шлях","n"],["even","навіть","adv"],
+  ["new","новий","adj"],["want","хотіти","v"],["because","тому що","conj"],["any","будь-який","det"],["these","ці","pron"],["give","давати","v"],["day","день","n"],["most","найбільше","det"],["us","нам","pron"],["between","між","prep"],
+  ["need","потребувати","v"],["large","великий","adj"],["often","часто","adv"],["hand","рука","n"],["high","високий","adj"],["place","місце","n"],["hold","тримати","v"],["world","світ","n"],["find","знаходити","v"],["still","ще / тихо","adv"],
+  ["should","слід","v"],["every","кожен","det"],["big","великий","adj"],["man","чоловік","n"],["where","де","adv"],["same","той самий","adj"],["tell","розповідати","v"],["follow","слідувати","v"],["both","обидва","det"],["through","через","prep"],
+  ["long","довгий","adj"],["never","ніколи","adv"],["much","багато","adv"],["before","до / раніше","prep"],["right","правильний","adj"],["too","теж / занадто","adv"],["mean","значити","v"],["old","старий","adj"],["here","тут","adv"],["those","ті","pron"],
+  ["keep","зберігати","v"],["start","починати","v"],["number","число","n"],["city","місто","n"],["country","країна","n"],["help","допомагати","v"],["against","проти","prep"],["without","без","prep"],["ask","питати","v"],["seem","здаватись","v"],
+  ["leave","залишати","v"],["child","дитина","n"],["while","поки","conj"],["small","малий","adj"],["real","справжній","adj"],["money","гроші","n"],["talk","говорити","v"],["move","рухатись","v"],["set","встановлювати","v"],["try","намагатись","v"],
+  ["put","класти","v"],["show","показувати","v"],["call","дзвонити / називати","v"],["part","частина","n"],["turn","повертати","v"],["head","голова","n"],["learn","вчитись","v"],["end","кінець","n"],["open","відкривати","v"],["walk","ходити","v"],
+  ["write","писати","v"],["read","читати","v"],["play","грати","v"],["feel","відчувати","v"],["eat","їсти","v"],["run","бігти","v"],["stop","зупинятись","v"],["room","кімната","n"],["live","жити","v"],["night","ніч","n"],
+  ["school","школа","n"],["always","завжди","adv"],["home","дім","n"],["draw","малювати","v"],["story","історія","n"],["wait","чекати","v"],["bring","приносити","v"],["watch","спостерігати","v"],["let","дозволяти","v"],["cut","різати","v"],
+  ["few","мало / кілька","det"],["north","північ","n"],["together","разом","adv"],["next","наступний","adj"],["white","білий","adj"],["children","діти","n"],["begin","починати","v"],["example","приклад","n"],["paper","папір","n"],["group","група","n"],
+  ["music","музика","n"],["mark","позначати","v"],["book","книга","n"],["letter","лист","n"],["until","поки не","conj"],["river","річка","n"],["car","автомобіль","n"],["care","турбуватись","v"],["second","другий","adj"],["enough","достатньо","adv"],
+  ["face","обличчя","n"],["far","далеко","adv"],["body","тіло","n"],["young","молодий","adj"],["miss","сумувати","v"],["black","чорний","adj"],["hear","чути","v"],["answer","відповідь","n"],["grow","рости","v"],["idea","ідея","n"],
+  ["girl","дівчина","n"],["boy","хлопець","n"],["animal","тварина","n"],["plant","рослина","n"],["cover","покривати","v"],["food","їжа","n"],["sun","сонце","n"],["four","чотири","num"],["hard","важкий / твердий","adj"],["state","штат / стан","n"],
+  ["bed","ліжко","n"],["along","вздовж","prep"],["might","міг би","v"],["close","закривати","v"],["best","найкращий","adj"],["love","любити","v"],["picture","картина","n"],["tree","дерево","n"],["dog","собака","n"],["bird","птах","n"],
+  ["fish","риба","n"],["near","поряд","prep"],["sentence","речення","n"],["light","світло","n"],["voice","голос","n"],["power","сила / влада","n"],["town","містечко","n"],["fine","добре / штраф","adj"],["drive","їхати","v"],["short","короткий","adj"],
+  ["road","дорога","n"],["common","звичайний","adj"],["once","одного разу","adv"],["street","вулиця","n"],["order","порядок","n"],["air","повітря","n"],["sleep","спати","v"],["full","повний","adj"],["force","сила","n"],["blue","синій","adj"],
+  ["cold","холодний","adj"],["ready","готовий","adj"],["dark","темний","adj"],["deep","глибокий","adj"],["fast","швидкий","adj"],["fire","вогонь","n"],["floor","підлога","n"],["game","гра","n"],["ground","земля","n"],["happen","відбуватись","v"],
+  ["heart","серце","n"],["heavy","важкий","adj"],["hour","година","n"],["human","людина","n"],["image","зображення","n"],["important","важливий","adj"],["interest","інтерес","n"],["issue","питання","n"],["kill","вбивати","v"],["kind","добрий / вид","adj"],
+  ["language","мова","n"],["lead","вести","v"],["line","лінія","n"],["list","список","n"],["lose","втрачати","v"],["low","низький","adj"],["maybe","можливо","adv"],["mind","розум","n"],["minute","хвилина","n"],["moment","момент","n"],
+  ["morning","ранок","n"],["mother","мати","n"],["mouth","рот","n"],["name","ім'я","n"],["news","новини","n"],["nice","гарний","adj"],["past","минуле","n"],["plan","планувати","v"],["price","ціна","n"],["problem","проблема","n"],
+  ["question","питання","n"],["red","червоний","adj"],["remember","пам'ятати","v"],["return","повертатись","v"],["simple","простий","adj"],["since","з тих пір","prep"],["sit","сидіти","v"],["stand","стояти","v"],["sure","впевнений","adj"],["table","стіл","n"],
+  ["thing","річ","n"],["though","хоча","conj"],["throw","кидати","v"],["under","під","prep"],["understand","розуміти","v"],["upon","на","prep"],["water","вода","n"],["window","вікно","n"],["without","без","prep"],["yes","так","adv"]
+];
+
+var mode = 'ua-en';
+var shuffled = [];
+var idx = 0;
+var correctCount = 0;
+var wrongCount = 0;
+var answered = false;
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('mode-ua-en').className = 'mode-btn' + (m==='ua-en'?' active':'');
+  document.getElementById('mode-en-ua').className = 'mode-btn' + (m==='en-ua'?' active':'');
+  restart();
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i=a.length-1;i>0;i--) {
+    var j=Math.floor(Math.random()*(i+1));
+    var t=a[i];a[i]=a[j];a[j]=t;
+  }
+  return a;
+}
+
+function restart() {
+  shuffled = shuffle(words);
+  idx=0; correctCount=0; wrongCount=0; answered=false;
+  document.getElementById('result-screen').style.display='none';
+  document.getElementById('word-card').style.display='';
+  document.getElementById('options-grid').style.display='';
+  document.getElementById('feedback').style.display='';
+  document.getElementById('next-btn').style.display='none';
+  renderQuestion();
+}
+
+function renderQuestion() {
+  answered=false;
+  var word=shuffled[idx];
+  var total=shuffled.length;
+  document.getElementById('progress-bar').style.width=(idx/total*100)+'%';
+  document.getElementById('stat-q').textContent='Питання '+(idx+1)+' / '+total;
+  document.getElementById('stat-correct').textContent='✓ '+correctCount;
+  document.getElementById('stat-wrong').textContent='✗ '+wrongCount;
+  var pct=idx>0?Math.round(correctCount/idx*100):0;
+  document.getElementById('stat-score').textContent=pct+'%';
+  var typeMap={v:'дієслово',n:'іменник',adj:'прикметник',adv:'прислівник',prep:'прийменник',conj:'сполучник',pron:'займенник',det:'детермінатив',num:'числівник',art:'артикль'};
+  document.getElementById('word-type').textContent=typeMap[word[2]]||word[2];
+  document.getElementById('word-en').textContent=mode==='ua-en'?word[1]:word[0];
+  document.getElementById('hint-text').textContent='';
+  document.getElementById('hint-btn').style.display='inline';
+  document.getElementById('feedback').textContent='';
+  document.getElementById('feedback').style.color='';
+  document.getElementById('next-btn').style.display='none';
+  var pool=words.filter(function(w){return w!==word;});
+  var wrong4=shuffle(pool).slice(0,4);
+  var allOpts=shuffle([word].concat(wrong4));
+  var grid=document.getElementById('options-grid');
+  grid.innerHTML='';
+  allOpts.forEach(function(opt){
+    var btn=document.createElement('button');
+    btn.className='opt-btn';
+    btn.textContent=mode==='ua-en'?opt[0]:opt[1];
+    btn.onclick=(function(o,b){return function(){checkAnswer(o,word,b);};})(opt,btn);
+    grid.appendChild(btn);
+  });
+}
+
+function showHint() {
+  var word=shuffled[idx];
+  var hint=mode==='ua-en'?word[0][0]+'...':word[1].split(' ')[0][0]+'...';
+  document.getElementById('hint-text').textContent='Підказка: '+hint;
+  document.getElementById('hint-btn').style.display='none';
+}
+
+function checkAnswer(chosen, correctWord, btn) {
+  if(answered)return;
+  answered=true;
+  var isCorrect=chosen===correctWord;
+  var btns=document.querySelectorAll('.opt-btn');
+  btns.forEach(function(b){
+    b.disabled=true;
+    var correctLabel=mode==='ua-en'?correctWord[0]:correctWord[1];
+    if(b.textContent===correctLabel)b.classList.add('reveal-correct');
+  });
+  if(isCorrect){btn.classList.add('correct');correctCount++;document.getElementById('feedback').textContent='✓ Правильно!';document.getElementById('feedback').style.color='#3B6D11';}
+  else{btn.classList.add('wrong');wrongCount++;var ans=mode==='ua-en'?correctWord[0]:correctWord[1];document.getElementById('feedback').textContent='✗ Правильна відповідь: '+ans;document.getElementById('feedback').style.color='#A32D2D';}
+  document.getElementById('next-btn').style.display='block';
+  document.getElementById('next-btn').textContent=idx+1>=shuffled.length?'Переглянути результат →':'Наступне →';
+}
+
+function nextQuestion() {
+  idx++;
+  if(idx>=shuffled.length){showResult();return;}
+  renderQuestion();
+}
+
+function showResult() {
+  document.getElementById('word-card').style.display='none';
+  document.getElementById('options-grid').style.display='none';
+  document.getElementById('feedback').style.display='none';
+  document.getElementById('next-btn').style.display='none';
+  document.getElementById('result-screen').style.display='block';
+  var pct=Math.round(correctCount/shuffled.length*100);
+  var emoji=pct>=90?'🏆':pct>=70?'👍':pct>=50?'💪':'📚';
+  document.getElementById('result-title').textContent=emoji+' '+pct+'% правильно';
+  document.getElementById('result-desc').textContent='Правильних: '+correctCount+' зі '+shuffled.length+'. '+(pct>=90?'Чудовий результат!':pct>=70?'Дуже добре!':pct>=50?'Непогано, продовжуй!':'Тренуйся ще!');
+}
+
+restart();
+</script>
+</body>
+</html>
