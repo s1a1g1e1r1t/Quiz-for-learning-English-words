@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Вікторина 400 англійських слів</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f3ef;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --text: #1a1916;
+    --text2: #6b6860;
+    --text3: #9b9890;
+    --accent: #1D9E75;
+    --accent-dark: #0F6E56;
+    --accent-light: #E1F5EE;
+    --danger: #E24B4A;
+    --danger-light: #FCEBEB;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.16);
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Georgia', serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: normal;
+    letter-spacing: 0.03em;
+    color: var(--text);
+    margin-bottom: 4px;
+    text-align: center;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: var(--text3);
+    text-align: center;
+    margin-bottom: 20px;
+    font-family: sans-serif;
+  }
+  #app { width: 100%; max-width: 600px; }
+
+  .controls {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .ctrl-btn {
+    font-family: sans-serif;
+    font-size: 13px;
+    padding: 6px 14px;
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    background: var(--surface);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ctrl-btn:hover { background: var(--surface2); color: var(--text); }
+  .ctrl-btn.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+  .spacer { flex: 1; }
+
+  .stats-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    flex: 1;
+    text-align: center;
+  }
+  .stat-label { font-size: 11px; color: var(--text3); font-family: sans-serif; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-val { font-size: 22px; font-weight: bold; color: var(--text); font-family: sans-serif; }
+  .stat-val.green { color: var(--accent); }
+  .stat-val.red { color: var(--danger); }
+
+  .progress-wrap { background: var(--surface2); border-radius: 4px; height: 5px; margin-bottom: 18px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.4s ease; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px 22px 20px;
+    margin-bottom: 12px;
+  }
+  .part-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-family: sans-serif;
+    color: var(--text3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2px 10px;
+    margin-bottom: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .word-display {
+    font-size: 36px;
+    font-weight: normal;
+    color: var(--text);
+    margin-bottom: 4px;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+  }
+  .transcr {
+    font-size: 14px;
+    color: var(--text3);
+    font-family: sans-serif;
+    font-style: italic;
+    margin-bottom: 6px;
+  }
+  .hint-row { margin-bottom: 16px; }
+  .hint-btn {
+    font-family: sans-serif;
+    font-size: 13px;
+    color: var(--accent);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+  .hint-box {
+    font-family: sans-serif;
+    font-size: 13px;
+    color: var(--text2);
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 6px 12px;
+    margin-top: 6px;
+    display: inline-block;
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .opt {
+    font-family: sans-serif;
+    font-size: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 13px 14px;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s, border-color 0.12s, transform 0.08s;
+    line-height: 1.3;
+  }
+  .opt:hover:not(:disabled) { background: var(--surface2); border-color: var(--accent); transform: translateY(-1px); }
+  .opt.correct { background: var(--accent-light); border-color: var(--accent); color: #085041; }
+  .opt.wrong   { background: var(--danger-light); border-color: var(--danger); color: #501313; }
+  .opt:disabled { cursor: default; transform: none; }
+  /* 5th option spans full width */
+  .opt.wide { grid-column: 1 / -1; }
+
+  .feedback {
+    margin-top: 14px;
+    font-family: sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    line-height: 1.4;
+  }
+  .feedback.ok  { background: var(--accent-light); color: #085041; }
+  .feedback.err { background: var(--danger-light); color: #501313; }
+
+  .type-input {
+    width: 100%;
+    font-size: 17px;
+    font-family: sans-serif;
+    padding: 11px 14px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    margin-bottom: 10px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .type-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(29,158,117,0.12); }
+
+  .submit-btn {
+    font-family: sans-serif;
+    font-size: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 10px 24px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s;
+  }
+  .submit-btn:hover { background: var(--accent-dark); }
+
+  .next-btn {
+    font-family: sans-serif;
+    font-size: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 10px 22px;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.12s;
+    display: block;
+    margin-top: 12px;
+  }
+  .next-btn:hover { background: var(--surface2); }
+
+  /* Results */
+  .results {
+    text-align: center;
+    padding: 32px 24px;
+  }
+  .results-emoji { font-size: 48px; margin-bottom: 12px; }
+  .results h2 { font-size: 22px; font-weight: normal; margin-bottom: 8px; }
+  .score-big { font-size: 56px; font-weight: bold; color: var(--accent); font-family: sans-serif; line-height: 1; margin-bottom: 6px; }
+  .results-info { font-family: sans-serif; font-size: 14px; color: var(--text2); margin-bottom: 20px; }
+  .restart-btn {
+    font-family: sans-serif;
+    font-size: 15px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 12px 32px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.15s;
+    margin-right: 8px;
+  }
+  .restart-btn:hover { background: var(--accent-dark); }
+  .restart-btn.outline {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border2);
+  }
+  .restart-btn.outline:hover { background: var(--surface2); }
+
+  .session-select { font-family: sans-serif; font-size: 13px; color: var(--text2); margin-top: 14px; }
+  .session-select select {
+    font-family: sans-serif;
+    font-size: 13px;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 4px 8px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    margin-left: 6px;
+  }
+</style>
+</head>
+<body>
+<h1>Вікторина англійських слів</h1>
+<p class="subtitle">400 найпоширеніших слів · 5 варіантів відповіді</p>
+<div id="app"><div id="root"></div></div>
+
+<script>
+const WORDS = [
+  ["the","артикль (визначений)","ðə","Артикль"],["be","бути","biː","Дієслово"],["to","до, щоб","tuː","Прийм."],["of","з, від","ɒv","Прийм."],["and","і, та","ænd","Сполучн."],["a","артикль (невизначений)","eɪ","Артикль"],["in","в, у","ɪn","Прийм."],["that","той, що","ðæt","Займ."],["have","мати","hæv","Дієслово"],["it","воно","ɪt","Займ."],
+  ["for","для, за","fɔː","Прийм."],["on","на","ɒn","Прийм."],["are","є (мн.)","ɑː","Дієслово"],["with","з","wɪð","Прийм."],["as","як","æz","Сполучн."],["at","біля, о","æt","Прийм."],["this","цей","ðɪs","Займ."],["but","але","bʌt","Сполучн."],["his","його","hɪz","Займ."],["by","через, по","baɪ","Прийм."],
+  ["from","від, з","frɒm","Прийм."],["they","вони","ðeɪ","Займ."],["we","ми","wiː","Займ."],["say","говорити","seɪ","Дієслово"],["her","її","hɜː","Займ."],["she","вона","ʃiː","Займ."],["or","або","ɔː","Сполучн."],["will","буде (майбутнє)","wɪl","Допом.д."],["my","мій","maɪ","Займ."],["one","один","wʌn","Числ."],
+  ["all","всі, все","ɔːl","Займ."],["would","би (умовний)","wʊd","Допом.д."],["there","там","ðeə","Прислівн."],["their","їхній","ðeə","Займ."],["what","що","wɒt","Займ."],["so","так, тому","səʊ","Прислівн."],["up","вгору","ʌp","Прислівн."],["out","назовні","aʊt","Прислівн."],["if","якщо","ɪf","Сполучн."],["about","про","əˈbaʊt","Прийм."],
+  ["who","хто","huː","Займ."],["get","отримувати","ɡet","Дієслово"],["which","який","wɪtʃ","Займ."],["go","йти","ɡəʊ","Дієслово"],["me","мені, мене","miː","Займ."],["when","коли","wen","Сполучн."],["make","робити","meɪk","Дієслово"],["can","могти","kæn","Допом.д."],["like","любити; як","laɪk","Дієслово"],["time","час","taɪm","Іменник"],
+  ["no","ні, жодного","nəʊ","Прислівн."],["just","тільки, щойно","dʒʌst","Прислівн."],["him","йому, його","hɪm","Займ."],["know","знати","nəʊ","Дієслово"],["take","брати","teɪk","Дієслово"],["people","люди","ˈpiːpl","Іменник"],["into","в, у (напрямок)","ˈɪntə","Прийм."],["year","рік","jɪə","Іменник"],["your","твій, ваш","jɔː","Займ."],["good","добрий","ɡʊd","Прикм."],
+  ["some","деякий","sʌm","Займ."],["could","міг би","kʊd","Допом.д."],["them","їм, їх","ðem","Займ."],["see","бачити","siː","Дієслово"],["other","інший","ˈʌðə","Прикм."],["than","ніж","ðæn","Сполучн."],["then","тоді","ðen","Прислівн."],["now","зараз","naʊ","Прислівн."],["look","дивитися","lʊk","Дієслово"],["only","тільки","ˈəʊnli","Прислівн."],
+  ["come","приходити","kʌm","Дієслово"],["over","над, понад","ˈəʊvə","Прийм."],["think","думати","θɪŋk","Дієслово"],["also","також","ˈɔːlsəʊ","Прислівн."],["back","назад","bæk","Прислівн."],["after","після","ˈɑːftə","Прийм."],["use","використовувати","juːz","Дієслово"],["two","два","tuː","Числ."],["how","як (питання)","haʊ","Прислівн."],["our","наш","aʊə","Займ."],
+  ["work","робота; працювати","wɜːk","Іменник"],["first","перший","fɜːst","Прикм."],["well","добре","wel","Прислівн."],["way","шлях, спосіб","weɪ","Іменник"],["even","навіть","ˈiːvn","Прислівн."],["new","новий","njuː","Прикм."],["want","хотіти","wɒnt","Дієслово"],["because","тому що","bɪˈkɒz","Сполучн."],["any","будь-який","ˈeni","Займ."],["these","ці","ðiːz","Займ."],
+  ["give","давати","ɡɪv","Дієслово"],["most","найбільше","məʊst","Прислівн."],["us","нам, нас","ʌs","Займ."],["great","чудовий","ɡreɪt","Прикм."],["between","між","bɪˈtwiːn","Прийм."],["need","потребувати","niːd","Дієслово"],["large","великий","lɑːdʒ","Прикм."],["often","часто","ˈɒfn","Прислівн."],["hand","рука","hænd","Іменник"],["high","високий","haɪ","Прикм."],
+  ["place","місце","pleɪs","Іменник"],["hold","тримати","həʊld","Дієслово"],["turn","повертати","tɜːn","Дієслово"],["three","три","θriː","Числ."],["show","показувати","ʃəʊ","Дієслово"],["find","знаходити","faɪnd","Дієслово"],["here","тут","hɪə","Прислівн."],["much","багато","mʌtʃ","Прислівн."],["through","через","θruː","Прийм."],["long","довгий","lɒŋ","Прикм."],
+  ["down","вниз","daʊn","Прислівн."],["day","день","deɪ","Іменник"],["did","зробив (мин.)","dɪd","Дієслово"],["may","може (дозвіл)","meɪ","Допом.д."],["part","частина","pɑːt","Іменник"],["number","число","ˈnʌmbə","Іменник"],["off","геть, вимк.","ɒf","Прислівн."],["always","завжди","ˈɔːlweɪz","Прислівн."],["move","рухатися","muːv","Дієслово"],["small","маленький","smɔːl","Прикм."],
+  ["world","світ","wɜːld","Іменник"],["still","все ще","stɪl","Прислівн."],["try","намагатися","traɪ","Дієслово"],["own","власний","əʊn","Прикм."],["every","кожний","ˈevri","Займ."],["life","життя","laɪf","Іменник"],["call","дзвонити; називати","kɔːl","Дієслово"],["where","де","weə","Прислівн."],["old","старий","əʊld","Прикм."],["few","мало","fjuː","Прикм."],
+  ["same","однаковий","seɪm","Прикм."],["tell","розповідати","tel","Дієслово"],["boy","хлопець","bɔɪ","Іменник"],["follow","слідувати","ˈfɒləʊ","Дієслово"],["set","встановлювати","set","Дієслово"],["put","класти","pʊt","Дієслово"],["end","кінець","end","Іменник"],["another","ще один","əˈnʌðə","Прикм."],["must","мусити","mʌst","Допом.д."],["home","дім","həʊm","Іменник"],
+  ["left","лівий; ліворуч","left","Прикм."],["enough","достатньо","ɪˈnʌf","Прислівн."],["never","ніколи","ˈnevə","Прислівн."],["next","наступний","nekst","Прикм."],["man","чоловік","mæn","Іменник"],["point","пункт","pɔɪnt","Іменник"],["city","місто","ˈsɪti","Іменник"],["play","грати","pleɪ","Дієслово"],["live","жити","lɪv","Дієслово"],["name","ім'я","neɪm","Іменник"],
+  ["real","реальний","rɪəl","Прикм."],["however","однак","haʊˈevə","Сполучн."],["under","під","ˈʌndə","Прийм."],["read","читати","riːd","Дієслово"],["last","останній","lɑːst","Прикм."],["thought","думка","θɔːt","Іменник"],["far","далеко","fɑː","Прислівн."],["help","допомагати","help","Дієслово"],["before","до, перед","bɪˈfɔː","Прийм."],["once","одного разу","wʌns","Прислівн."],
+  ["soon","скоро","suːn","Прислівн."],["head","голова","hed","Іменник"],["let","дозволяти","let","Дієслово"],["body","тіло","ˈbɒdi","Іменник"],["family","сім'я","ˈfæməli","Іменник"],["run","бігти","rʌn","Дієслово"],["face","обличчя","feɪs","Іменник"],["keep","тримати","kiːp","Дієслово"],["watch","дивитися","wɒtʃ","Дієслово"],["side","сторона","saɪd","Іменник"],
+  ["while","поки; хоча","waɪl","Сполучн."],["such","такий","sʌtʃ","Прикм."],["open","відкривати","ˈəʊpən","Дієслово"],["seem","здаватися","siːm","Дієслово"],["together","разом","təˈɡeðə","Прислівн."],["stand","стояти","stænd","Дієслово"],["begin","починати","bɪˈɡɪn","Дієслово"],["change","змінювати","tʃeɪndʒ","Дієслово"],["ask","питати","ɑːsk","Дієслово"],["children","діти","ˈtʃɪldrən","Іменник"],
+  ["both","обидва","bəʊθ","Прикм."],["country","країна","ˈkʌntri","Іменник"],["learn","вчити","lɜːn","Дієслово"],["something","щось","ˈsʌmθɪŋ","Займ."],["nothing","нічого","ˈnʌθɪŋ","Займ."],["money","гроші","ˈmʌni","Іменник"],["house","будинок","haʊs","Іменник"],["feel","відчувати","fiːl","Дієслово"],["second","другий","ˈsekənd","Прикм."],["bad","поганий","bæd","Прикм."],
+  ["without","без","wɪˈðaʊt","Прийм."],["early","ранній","ˈɜːli","Прикм."],["ago","тому (час)","əˈɡəʊ","Прислівн."],["eye","око","aɪ","Іменник"],["again","знову","əˈɡen","Прислівн."],["though","хоча","ðəʊ","Сполучн."],["mind","розум","maɪnd","Іменник"],["earth","земля","ɜːθ","Іменник"],["power","сила","ˈpaʊə","Іменник"],["example","приклад","ɪɡˈzɑːmpl","Іменник"],
+  ["state","держава; стан","steɪt","Іменник"],["different","різний","ˈdɪfrənt","Прикм."],["school","школа","skuːl","Іменник"],["already","вже","ɔːlˈredi","Прислівн."],["might","міг би","maɪt","Допом.д."],["stop","зупиняти","stɒp","Дієслово"],["study","вчитися","ˈstʌdi","Дієслово"],["eat","їсти","iːt","Дієслово"],["true","правдивий","truː","Прикм."],["become","ставати","bɪˈkʌm","Дієслово"],
+  ["leave","залишати","liːv","Дієслово"],["word","слово","wɜːd","Іменник"],["room","кімната","ruːm","Іменник"],["line","лінія","laɪn","Іменник"],["light","світло","laɪt","Іменник"],["hear","чути","hɪə","Дієслово"],["talk","говорити","tɔːk","Дієслово"],["bring","приносити","brɪŋ","Дієслово"],["sometimes","іноді","ˈsʌmtaɪmz","Прислівн."],["write","писати","raɪt","Дієслово"],
+  ["black","чорний","blæk","Прикм."],["white","білий","waɪt","Прикм."],["free","вільний","friː","Прикм."],["right","правий; правильний","raɪt","Прикм."],["send","надсилати","send","Дієслово"],["almost","майже","ˈɔːlməʊst","Прислівн."],["child","дитина","tʃaɪld","Іменник"],["sit","сидіти","sɪt","Дієслово"],["along","вздовж","əˈlɒŋ","Прийм."],["cut","різати","kʌt","Дієслово"],
+  ["problem","проблема","ˈprɒbləm","Іменник"],["idea","ідея","aɪˈdɪə","Іменник"],["water","вода","ˈwɔːtə","Іменник"],["air","повітря","eə","Іменник"],["ground","земля (поверхня)","ɡraʊnd","Іменник"],["above","вище","əˈbʌv","Прийм."],["actually","насправді","ˈæktʃuəli","Прислівн."],["ever","коли-небудь","ˈevə","Прислівн."],["young","молодий","jʌŋ","Прикм."],["walk","ходити","wɔːk","Дієслово"],
+  ["across","через, навпроти","əˈkrɒs","Прийм."],["morning","ранок","ˈmɔːnɪŋ","Іменник"],["better","кращий","ˈbetə","Прикм."],["less","менше","les","Прислівн."],["whole","цілий","həʊl","Прикм."],["close","закривати; близько","kləʊz","Дієслово"],["night","ніч","naɪt","Іменник"],["area","площа","ˈeəriə","Іменник"],["girl","дівчина","ɡɜːl","Іменник"],["yet","ще (у питаннях)","jet","Прислівн."],
+  ["those","ті","ðəʊz","Займ."],["during","під час","ˈdjʊərɪŋ","Прийм."],["happen","траплятися","ˈhæpən","Дієслово"],["case","випадок","keɪs","Іменник"],["among","серед","əˈmʌŋ","Прийм."],["war","війна","wɔː","Іменник"],["age","вік","eɪdʒ","Іменник"],["care","піклуватися","keə","Дієслово"],["perhaps","можливо","pəˈhæps","Прислівн."],["friend","друг","frend","Іменник"],
+  ["mean","означати","miːn","Дієслово"],["strong","сильний","strɒŋ","Прикм."],["love","любити","lʌv","Дієслово"],["fire","вогонь","faɪə","Іменник"],["heat","тепло","hiːt","Іменник"],["cold","холодний","kəʊld","Прикм."],["fall","падати","fɔːl","Дієслово"],["fill","заповнювати","fɪl","Дієслово"],["save","рятувати","seɪv","Дієслово"],["reach","досягати","riːtʃ","Дієслово"],
+  ["remain","залишатися","rɪˈmeɪn","Дієслово"],["suggest","пропонувати","səˈdʒest","Дієслово"],["raise","підіймати","reɪz","Дієслово"],["pass","проходити","pɑːs","Дієслово"],["prove","доводити","pruːv","Дієслово"],["agree","погоджуватися","əˈɡriː","Дієслово"],["include","включати","ɪnˈkluːd","Дієслово"],["continue","продовжувати","kənˈtɪnjuː","Дієслово"],["understand","розуміти","ˌʌndəˈstænd","Дієслово"],["result","результат","rɪˈzʌlt","Іменник"],
+  ["expect","очікувати","ɪkˈspekt","Дієслово"],["recent","нещодавній","ˈriːsnt","Прикм."],["group","група","ɡruːp","Іменник"],["rather","скоріше","ˈrɑːðə","Прислівн."],["especially","особливо","ɪˈspeʃəli","Прислівн."],["fact","факт","fækt","Іменник"],["certain","певний","ˈsɜːtn","Прикм."],["common","загальний","ˈkɒmən","Прикм."],["government","уряд","ˈɡʌvənmənt","Іменник"],["interest","інтерес","ˈɪntrəst","Іменник"],
+  ["service","послуга","ˈsɜːvɪs","Іменник"],["provide","надавати","prəˈvaɪd","Дієслово"],["public","публічний","ˈpʌblɪk","Прикм."],["important","важливий","ɪmˈpɔːtnt","Прикм."],["program","програма","ˈprəʊɡræm","Іменник"],["price","ціна","praɪs","Іменник"],["receive","отримувати","rɪˈsiːv","Дієслово"],["answer","відповідь","ˈɑːnsə","Іменник"],["appear","з'являтися","əˈpɪə","Дієслово"],["require","потребувати","rɪˈkwaɪə","Дієслово"],
+  ["produce","виробляти","prəˈdjuːs","Дієслово"],["possible","можливий","ˈpɒsɪbl","Прикм."],["complete","завершувати","kəmˈpliːt","Дієслово"],["whether","чи","ˈweðə","Сполучн."],["question","питання","ˈkwestʃən","Іменник"],["indeed","справді","ɪnˈdiːd","Прислівн."],["level","рівень","ˈlevl","Іменник"],["simple","простий","ˈsɪmpl","Прикм."],["control","контроль","kənˈtrəʊl","Іменник"],["personal","особистий","ˈpɜːsənl","Прикм."],
+  ["develop","розвивати","dɪˈveləp","Дієслово"],["increase","збільшувати","ɪnˈkriːs","Дієслово"],["natural","природний","ˈnætʃrəl","Прикм."],["major","головний","ˈmeɪdʒə","Прикм."],["general","загальний","ˈdʒenrəl","Прикм."],["present","теперішній","ˈpreznt","Прикм."],["single","єдиний","ˈsɪŋɡl","Прикм."],["society","суспільство","səˈsaɪəti","Іменник"],["act","діяти","ækt","Дієслово"],["national","національний","ˈnæʃnəl","Прикм."],
+  ["business","бізнес","ˈbɪznɪs","Іменник"],["sense","відчуття","sens","Іменник"],["force","сила","fɔːs","Іменник"],["order","порядок","ˈɔːdə","Іменник"],["position","позиція","pəˈzɪʃn","Іменник"],["return","повертатися","rɪˈtɜːn","Дієслово"],["choose","обирати","tʃuːz","Дієслово"],["value","цінність","ˈvæljuː","Іменник"],["probably","мабуть","ˈprɒbəbli","Прислівн."],["able","здатний","ˈeɪbl","Прикм."],
+  ["cause","причина","kɔːz","Іменник"],["reason","причина","ˈriːzn","Іменник"],["consider","розглядати","kənˈsɪdə","Дієслово"],["system","система","ˈsɪstəm","Іменник"],["quite","досить","kwaɪt","Прислівн."],["process","процес","ˈprəʊses","Іменник"],["history","історія","ˈhɪstri","Іменник"],["support","підтримувати","səˈpɔːt","Дієслово"],["clear","зрозумілий","klɪə","Прикм."],["main","головний","meɪn","Прикм."],
+  ["believe","вірити","bɪˈliːv","Дієслово"],["decide","вирішувати","dɪˈsaɪd","Дієслово"],["information","інформація","ˌɪnfəˈmeɪʃn","Іменник"],["technology","технологія","tekˈnɒlədʒi","Іменник"],["experience","досвід","ɪkˈspɪəriəns","Іменник"],["knowledge","знання","ˈnɒlɪdʒ","Іменник"],["character","характер","ˈkærəktə","Іменник"],["finally","нарешті","ˈfaɪnəli","Прислівн."],["decision","рішення","dɪˈsɪʒn","Іменник"],["model","модель","ˈmɒdl","Іменник"],
+  ["kill","вбивати","kɪl","Дієслово"],["draw","малювати","drɔː","Дієслово"],["plan","план","plæn","Іменник"],["upon","на (книжн.)","əˈpɒn","Прийм."],["around","навколо","əˈraʊnd","Прийм."],["form","форма","fɔːm","Іменник"],["god","бог","ɡɒd","Іменник"],["deal","угода; мати справу","diːl","Іменник"],["job","робота","dʒɒb","Іменник"],["pay","платити","peɪ","Дієслово"],
+  ["news","новини","njuːz","Іменник"],["speak","говорити (формально)","spiːk","Дієслово"],["spend","витрачати","spend","Дієслово"],["lose","втрачати","luːz","Дієслово"],["win","перемагати","wɪn","Дієслово"],["meet","зустрічати","miːt","Дієслово"],["build","будувати","bɪld","Дієслово"],["grow","рости","ɡrəʊ","Дієслово"],["wish","бажати","wɪʃ","Дієслово"],["add","додавати","æd","Дієслово"],
+  ["start","починати","stɑːt","Дієслово"],["create","створювати","kriˈeɪt","Дієслово"],["open","відкритий","ˈəʊpən","Прикм."],["local","місцевий","ˈləʊkl","Прикм."],["hard","важкий","hɑːd","Прикм."],["great","великий","ɡreɪt","Прикм."],["sure","впевнений","ʃʊə","Прикм."],["available","доступний","əˈveɪləbl","Прикм."],["late","пізній","leɪt","Прикм."],["final","остаточний","ˈfaɪnl","Прикм."],
+];
+
+const seen = new Set();
+const UNIQUE = [];
+for(const w of WORDS){ const k=w[0]+'|'+w[1]; if(!seen.has(k)){seen.add(k);UNIQUE.push(w);} }
+
+let mode = 'multi';
+let dir = 'en2ua';
+let total = 20;
+let session = [];
+let idx = 0;
+let correct = 0;
+let wrong = 0;
+let answered = false;
+let userAns = '';
+let showHint = false;
+let done = false;
+
+function shuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function buildSession(){
+  session = shuffle(UNIQUE).slice(0, total);
+  session.forEach(w => delete w._opts);
+  idx=0; correct=0; wrong=0; answered=false; userAns=''; showHint=false; done=false;
+}
+
+function getOptions(cur){
+  const pool = UNIQUE.filter(w => w!==cur);
+  return shuffle([cur, ...shuffle(pool).slice(0,4)]);
+}
+
+function render(){
+  const root = document.getElementById('root');
+  if(done){ root.innerHTML = renderResults(); return; }
+  const cur = session[idx];
+  const q = dir==='en2ua' ? cur[0] : cur[1];
+  const a = dir==='en2ua' ? cur[1] : cur[0];
+  const pct = Math.round((idx/total)*100);
+
+  root.innerHTML = `
+    <div class="controls">
+      <button class="ctrl-btn${mode==='multi'?' active':''}" onclick="setMode('multi')">5 варіантів</button>
+      <button class="ctrl-btn${mode==='type'?' active':''}" onclick="setMode('type')">Введення</button>
+      <span class="spacer"></span>
+      <button class="ctrl-btn${dir==='en2ua'?' active':''}" onclick="setDir('en2ua')">Англ→Укр</button>
+      <button class="ctrl-btn${dir==='ua2en'?' active':''}" onclick="setDir('ua2en')">Укр→Англ</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-label">Питання</div><div class="stat-val">${idx+1}&nbsp;/&nbsp;${total}</div></div>
+      <div class="stat"><div class="stat-label">Правильно</div><div class="stat-val green">${correct}</div></div>
+      <div class="stat"><div class="stat-label">Помилки</div><div class="stat-val red">${wrong}</div></div>
+      <div class="stat"><div class="stat-label">Слів у базі</div><div class="stat-val">${UNIQUE.length}</div></div>
+    </div>
+    <div class="progress-wrap"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="card">
+      <div class="part-badge">${cur[3]}</div>
+      <div class="word-display">${q}</div>
+      ${dir==='en2ua' ? `<div class="transcr">[${cur[2]}]</div>` : ''}
+      <div class="hint-row">
+        ${!answered ? `<button class="hint-btn" onclick="toggleHint()">💡 підказка</button>` : ''}
+        ${showHint && !answered ? `<div class="hint-box">${dir==='en2ua' ? cur[3] : '['+cur[2]+']'}</div>` : ''}
+      </div>
+      ${mode==='multi' ? renderMulti(cur, a) : renderType(a)}
+    </div>
+    ${answered ? `<button class="next-btn" onclick="nextQ()">Наступне →</button>` : ''}
+  `;
+  if(mode==='type' && !answered){
+    const inp = document.getElementById('typein');
+    if(inp){ inp.focus(); inp.value = ''; }
+  }
+}
+
+function renderMulti(cur, correctAns){
+  if(!cur._opts) cur._opts = getOptions(cur);
+  const opts = cur._opts;
+  let html = '<div class="options-grid">';
+  opts.forEach((opt, i) => {
+    const label = dir==='en2ua' ? opt[1] : opt[0];
+    const isCorrect = opt===cur;
+    const isLast = i===4;
+    let cls = 'opt' + (isLast ? ' wide' : '');
+    if(answered){
+      if(isCorrect) cls += ' correct';
+      else if(label===userAns) cls += ' wrong';
+    }
+    const safe = label.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
+    const ca = correctAns.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
+    html += `<button class="${cls}" onclick="pickOpt('${safe}','${ca}',${isCorrect})" ${answered?'disabled':''}>${label}</button>`;
+  });
+  html += '</div>';
+  if(answered){
+    const ok = userAns===correctAns;
+    html += `<div class="feedback ${ok?'ok':'err'}">${ok ? '✓ Правильно!' : '✗ Правильно: '+correctAns}</div>`;
+  }
+  return html;
+}
+
+function renderType(correctAns){
+  const ca = correctAns.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
+  let html = `<input id="typein" class="type-input" type="text" placeholder="Введіть переклад..." onkeydown="if(event.key==='Enter')checkType('${ca}')">`;
+  if(!answered) html += `<button class="submit-btn" onclick="checkType('${ca}')">Перевірити</button>`;
+  if(answered){
+    const norm = s => s.toLowerCase().trim().replace(/['']/g,"'");
+    const ok = norm(userAns)===norm(correctAns);
+    html += `<div class="feedback ${ok?'ok':'err'}">${ok ? '✓ Правильно!' : '✗ Правильно: '+correctAns}</div>`;
+  }
+  return html;
+}
+
+function renderResults(){
+  const pct = Math.round((correct/total)*100);
+  const em = pct>=80?'🎉':pct>=50?'👍':'💪';
+  return `<div class="card results">
+    <div class="results-emoji">${em}</div>
+    <h2>Результат</h2>
+    <div class="score-big">${pct}%</div>
+    <div class="results-info">Правильно: ${correct} з ${total} · Помилки: ${wrong}</div>
+    <div class="results-info">Слів у базі: ${UNIQUE.length}</div>
+    <div>
+      <button class="restart-btn" onclick="restart()">Нова сесія</button>
+      <button class="restart-btn outline" onclick="changeDir()">Змінити напрям</button>
+    </div>
+    <div class="session-select">
+      Питань у сесії:
+      <select onchange="changeTotal(this.value)">
+        <option value="10" ${total===10?'selected':''}>10</option>
+        <option value="20" ${total===20?'selected':''}>20</option>
+        <option value="30" ${total===30?'selected':''}>30</option>
+        <option value="50" ${total===50?'selected':''}>50</option>
+        <option value="${UNIQUE.length}" ${total===UNIQUE.length?'selected':''}>Всі (${UNIQUE.length})</option>
+      </select>
+    </div>
+  </div>`;
+}
+
+function toggleHint(){ showHint=!showHint; render(); }
+function pickOpt(label, ca, isCorrect){
+  if(answered) return;
+  answered=true; userAns=label;
+  if(isCorrect) correct++; else wrong++;
+  render();
+}
+function checkType(ca){
+  const inp=document.getElementById('typein');
+  if(!inp) return;
+  userAns=inp.value; answered=true;
+  const norm=s=>s.toLowerCase().trim().replace(/['']/g,"'");
+  if(norm(userAns)===norm(ca)) correct++; else wrong++;
+  render();
+}
+function nextQ(){
+  idx++; answered=false; userAns=''; showHint=false;
+  if(idx>=total) done=true;
+  render();
+}
+function setMode(m){ mode=m; answered=false; userAns=''; render(); }
+function setDir(d){ dir=d; render(); }
+function restart(){ buildSession(); render(); }
+function changeDir(){ dir=dir==='en2ua'?'ua2en':'en2ua'; restart(); }
+function changeTotal(n){ total=parseInt(n); restart(); }
+
+buildSession();
+render();
+</script>
+</body>
+</html>
